@@ -24,18 +24,26 @@ const App = () => {
   const [trendingMovies, setTrendingMovies] = useState([]);
   const [loading, setLoading] = useState(false);
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(searchTerm);
+  const [quotaExceeded, setQuotaExceeded] = useState(false);
 
   useDebounce(() => setDebouncedSearchTerm(searchTerm), 500, [searchTerm]);
 
 const fetchMovies = async (query = '') => {
     setLoading(true);
     setErrorMessage('');
+    setQuotaExceeded(false);
 
     try {
       const endpoint = query
       ? `${API_BASE_URL}search?originalTitleAutocomplete=${encodeURI(query)}&type=movie&sortOrder=DESC&sortField=numVotes` 
       : `${API_BASE_URL}most-popular-movies`;
       const response = await fetch(endpoint, API_OPTIONS);
+
+      if (response.status === 429) {
+        setQuotaExceeded(true);
+        throw new Error('API quota exceeded');
+      }
+
       if (!response.ok) {
         throw new Error('Failed to fetch movies');
       }
@@ -52,18 +60,20 @@ const fetchMovies = async (query = '') => {
       throw new Error('Unexpected API response format');
     }
       setMoviesList(movies);
-      if (query && data.results.length > 0) {
+       if (query && data.results.length > 0) {
         const movie = data.results[0];
         await updateSearchCount(query, movie);
       }
     } catch (error) {
       console.error('Error fetching movies:', error);
-      setErrorMessage('Failed to fetch movies. Please try again later.');
+      if (!quotaExceeded) {
+        setErrorMessage('Failed to fetch movies. Please try again later.');
+      }
       setMoviesList([]);
     } finally {
       setLoading(false);
     }
-  }
+};
 
 const loadTrendingMovies = async () => {
   try {
@@ -72,7 +82,7 @@ const loadTrendingMovies = async () => {
   } catch (error) {
     console.error('Error fetching trending movies:', error);
   }
-}
+};
 
 useEffect(() => {
     fetchMovies(debouncedSearchTerm);
@@ -93,6 +103,11 @@ useEffect(() => {
           <h1>Find <span className='text-gradient'>Movies</span> You'll Enjoy Without the Hassle</h1>
           <Search searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
         </header>
+        {quotaExceeded && (
+          <div className="bg-red-100 text-red-800 p-4 rounded-md mt-4 text-center font-semibold shadow">
+            Monthly API quota has been exceeded. Please try again later.
+          </div>
+        )}
         {trendingMovies.length > 0 && !searchTerm && (
           <section className='trending'>
             <h2>Trending Movies</h2>
