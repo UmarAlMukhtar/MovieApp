@@ -1,12 +1,24 @@
-# React + Vite
+# MovieApp
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A React-based MovieApp built with Vite and Appwrite that helps you discover trending and popular movies with an optimized search experience. Appwrite is used to store and analyze search metrics for improved recommendations.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **Trending Movies by Search History:** View a list of trending movies tailored to your recent searches.
+- **Popular Movies:** Browse a curated list of popular movies.
+- **Optimized Search:** Enjoy fast and efficient movie searches with debounce to minimize unnecessary API calls.
+- **Search Metrics Storage:** Search metrics are securely stored and managed using Appwrite for analytics and personalized experiences.
 
-## Expanding the ESLint configuration
+## Getting Started
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+1. Clone the repository.
+2. Run `npm install` to install dependencies.
+3. Start the app with `npm run dev`.
+
+## Technologies Used
+
+- React
+- Vite
+- JavaScript (ES6+)
+- Tailwind CSS
+- Appwrite
