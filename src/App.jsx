@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react';
+import { use, useEffect, useState } from 'react';
 import Search from './components/Search';
 import Spinner from './components/Spinner';
 import MovieCard from './components/MovieCard';
 import { useDebounce } from 'react-use';
-import { updateSearchCount } from './appwrite';
+import { getTrendingMovies, updateSearchCount } from './appwrite';
 
 const API_BASE_URL = 'https://imdb236.p.rapidapi.com/api/imdb/'
 const API_KEY = import.meta.env.VITE_IMDB_API_KEY;
@@ -21,6 +21,7 @@ const App = () => {
   const [searchTerm, setSearchTerm] = useState('')
   const [errorMessage, setErrorMessage] = useState('');
   const [moviesList, setMoviesList] = useState([]);
+  const [trendingMovies, setTrendingMovies] = useState([]);
   const [loading, setLoading] = useState(false);
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(searchTerm);
 
@@ -64,10 +65,22 @@ const fetchMovies = async (query = '') => {
     }
   }
 
+const loadTrendingMovies = async () => {
+  try {
+    const movies = await getTrendingMovies();
+    setTrendingMovies(movies);  
+  } catch (error) {
+    console.error('Error fetching trending movies:', error);
+  }
+}
 
 useEffect(() => {
     fetchMovies(debouncedSearchTerm);
   }, [debouncedSearchTerm]);
+
+  useEffect(() => {
+    loadTrendingMovies();
+  }, []);
 
   return (
     <main>
@@ -75,13 +88,29 @@ useEffect(() => {
 
       <div className='wrapper'>
         <header>
+          <img src='./logo.png' alt='Logo' className="w-12 h-12" />  
           <img src='./hero.png' alt='Hero banner'/>
           <h1>Find <span className='text-gradient'>Movies</span> You'll Enjoy Without the Hassle</h1>
           <Search searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
         </header>
+        {trendingMovies.length > 0 && !searchTerm && (
+          <section className='trending'>
+            <h2>Trending Movies</h2>
+            <ul>
+              {trendingMovies.map((movie, index) => (
+                <li key={movie.$id}>
+                  <p>{index + 1}</p>
+                  <a a href={movie.url} target='_blank' rel='noopener noreferrer'>
+                    <img src={movie.posterUrl} alt={movie.title} />
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
 
         <section className='all-movies'>
-          <h2 className='mt-[40px]'>All Movies</h2>
+          <h2>Popular</h2>
 
           {loading ? (
             <Spinner />
