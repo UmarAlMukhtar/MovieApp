@@ -5,16 +5,17 @@ import MovieCard from './components/MovieCard';
 import { useDebounce } from 'react-use';
 import { getTrendingMovies, updateSearchCount } from './appwrite';
 
-const API_BASE_URL = 'https://imdb236.p.rapidapi.com/api/imdb/'
-const API_KEY = import.meta.env.VITE_IMDB_API_KEY;
+const API_BASE_URL = 'https://api.themoviedb.org/3';
 
-const API_OPTIONS ={
-	method: 'GET',
-	headers: {
-		'x-rapidapi-key': API_KEY,
-		'x-rapidapi-host': 'imdb236.p.rapidapi.com'
-	}
-};
+const API_KEY = import.meta.env.VITE_TMDB_API_KEY;
+
+const API_OPTIONS = {
+  method: 'GET',
+  headers: {
+    accept: 'application/json',
+    Authorization: `Bearer ${API_KEY}`
+  }
+}
 
 
 const App = () => {
@@ -35,9 +36,10 @@ const fetchMovies = async (query = '') => {
 
     try {
       const endpoint = query
-      ? `${API_BASE_URL}search?originalTitleAutocomplete=${encodeURI(query)}&type=movie&sortOrder=DESC&sortField=numVotes` 
-      : `${API_BASE_URL}most-popular-movies`;
-      const response = await fetch(endpoint, API_OPTIONS);
+        ? `${API_BASE_URL}/search/movie?query=${encodeURIComponent(query)}`
+        : `${API_BASE_URL}/discover/movie?sort_by=popularity.desc`;
+
+        const response = await fetch(endpoint, API_OPTIONS);
 
       if (response.status === 429) {
         setQuotaExceeded(true);
@@ -50,40 +52,34 @@ const fetchMovies = async (query = '') => {
 
       const data = await response.json();
 
-      let movies = [];
+      if(data.Response === 'False') {
+        setErrorMessage(data.Error || 'Failed to fetch movies');
+        setMoviesList([]);
+        return;
+      }
 
-    if (Array.isArray(data)) {
-      movies = data;
-    } else if (Array.isArray(data.results)) {
-      movies = data.results;
-    } else {
-      throw new Error('Unexpected API response format');
-    }
-      setMoviesList(movies);
-       if (query && data.results.length > 0) {
-        const movie = data.results[0];
-        await updateSearchCount(query, movie);
+      setMoviesList(data.results || []);
+
+      if(query && data.results.length > 0) {
+        await updateSearchCount(query, data.results[0]);
       }
     } catch (error) {
-      console.error('Error fetching movies:', error);
-      if (!quotaExceeded) {
-        setErrorMessage('Failed to fetch movies. Please try again later.');
-      }
-      setMoviesList([]);
+      console.error(`Error fetching movies: ${error}`);
+      setErrorMessage('Error fetching movies. Please try again later.');
     } finally {
       setLoading(false);
     }
-};
-
-const loadTrendingMovies = async () => {
-  try {
-    const movies = await getTrendingMovies();
-    setTrendingMovies(movies);  
-  } catch (error) {
-    console.error('Error fetching trending movies:', error);
   }
-};
 
+  const loadTrendingMovies = async () => {
+    try {
+      const movies = await getTrendingMovies();
+
+      setTrendingMovies(movies);
+    } catch (error) {
+      console.error(`Error fetching trending movies: ${error}`);
+    }
+  }
 useEffect(() => {
     fetchMovies(debouncedSearchTerm);
   }, [debouncedSearchTerm]);
@@ -116,7 +112,7 @@ useEffect(() => {
                 <li key={movie.$id}>
                   <p>{index + 1}</p>
                   <a a href={movie.url} target='_blank' rel='noopener noreferrer'>
-                    <img src={movie.posterUrl} alt={movie.title} />
+                    <img src={movie.poster_url} alt={movie.title} />
                   </a>
                 </li>
               ))}
